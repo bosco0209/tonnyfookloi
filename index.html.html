@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Add this in <head> -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ============================================
+        // STEP 1: SUPABASE INITIALIZATION
+        // ============================================
+        const SUPABASE_URL = 'https://lpnhwdsepymtthesdnul.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxwbmh3ZHNlcHltdHRoZXNkbnVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3NzY4MzMsImV4cCI6MjA4MDM1MjgzM30.Zq2tOjlMyG-VQ2NKcwfWP4a2tmgnreQN1UFiiB39ILI';
+
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // ============================================
+        // DATABASE FUNCTIONS
+        // ============================================
+
+        // Function to submit Test Drive Booking
+        async function submitTestDrive(formData) {
+            try {
+                const { data, error } = await supabase
+                    .from('test_drive_bookings')
+                    .insert([{
+                        full_name: formData.name,
+                        phone: formData.phone,
+                        email: formData.email,
+                        booking_date: formData.date,
+                        booking_time: formData.time,
+                        car_model: formData.car,
+                        notes: formData.notes,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                return { success: true, data };
+            } catch (error) {
+                console.error('Error submitting test drive:', error);
+                return { success: false, error };
+            }
+        }
+
+        // Function to submit Purchase Application (SIMPLIFIED - No file upload)
+        async function submitPurchase(formData) {
+            try {
+                const { data, error } = await supabase
+                    .from('purchase_applications')
+                    .insert([{
+                        full_name: formData.fullName,
+                        ic_number: formData.icNumber,
+                        date_of_birth: formData.dateOfBirth,
+                        phone: formData.phoneNumber,
+                        email: formData.email,
+                        salary: formData.salary,
+                        car_model: formData.carModel,
+                        purpose: formData.purpose,
+                        documents: 'To be sent via email',
+                        notes: formData.notes,
+                        status: 'pending',
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) throw error;
+                return { success: true, data };
+            } catch (error) {
+                console.error('Error submitting purchase application:', error);
+                return { success: false, error };
+            }
+        }
+
+        // ============================================
+        // GMAIL/EMAIL FUNCTIONS
+        // ============================================
+
+        // Function to show Gmail attachment instructions
+        function showGmailInstructions() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="color: var(--secondary); margin: 0;">
+                            <i class="fab fa-google"></i> How to Attach Files in Gmail
+                        </h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray);">
+                            ×
+                        </button>
+                    </div>
+                    
+                    <div style="display: flex; align-items: start; gap: 20px; margin-bottom: 20px;">
+                        <div style="flex: 1;">
+                            <h4 style="color: var(--primary); margin-bottom: 10px;">Step-by-Step Guide:</h4>
+                            <ol style="margin-left: 20px; line-height: 1.8;">
+                                <li><strong>Open Gmail</strong> in your browser</li>
+                                <li>Click <strong>"Compose"</strong> button</li>
+                                <li>Enter recipient: <code>tonny@fookloiproton.com</code></li>
+                                <li>Enter subject: <code>Fook Loi Proton - Purchase Application Documents</code></li>
+                                <li>Click the <strong>paperclip icon</strong> 📎 at the bottom</li>
+                                <li>Select files from your computer</li>
+                                <li>Wait for upload to complete</li>
+                                <li>Click <strong>"Send"</strong></li>
+                            </ol>
+                        </div>
+                        <div style="flex: 1; text-align: center;">
+                            <div style="background: #f5f5f5; padding: 20px; border-radius: 5px; border: 1px solid #ddd;">
+                                <div style="background: #e8f0fe; padding: 10px; border-radius: 3px; margin-bottom: 10px;">
+                                    <span style="color: #1a73e8;">📎 Attach files</span>
+                                </div>
+                                <p style="font-size: 0.8rem; color: var(--gray); margin-top: 5px;">Click the paperclip icon in Gmail</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <h5 style="color: var(--secondary); margin-bottom: 10px;">
+                            <i class="fas fa-lightbulb"></i> Tips for Chrome/Gmail Users:
+                        </h5>
+                        <ul style="margin-left: 20px; color: var(--gray);">
+                            <li>You can drag & drop files directly into Gmail</li>
+                            <li>Maximum file size in Gmail is 25MB</li>
+                            <li>Supported formats: PDF, JPG, PNG, DOC, etc.</li>
+                            <li>You can attach multiple files at once</li>
+                            <li>Keep file names clear (e.g., "IC_Card.jpg", "Salary_Oct.pdf")</li>
+                        </ul>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                        <button onclick="window.open('https://mail.google.com', '_blank'); this.parentElement.parentElement.parentElement.remove();" 
+                                style="background: #EA4335; color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px;">
+                            <i class="fab fa-google"></i> Open Gmail Now
+                        </button>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                                style="background: var(--gray); color: white; padding: 12px 30px; border: none; border-radius: 5px; cursor: pointer;">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Function to prepare email with form data
+        function prepareEmail() {
+            const email = 'tonny@fookloiproton.com';
+            const subject = 'Fook Loi Proton - Purchase Application Documents';
+            
+            // Get form data
+            const fullName = document.getElementById('fullName')?.value || '';
+            const icNumber = document.getElementById('icNumber')?.value || '';
+            const carModel = document.getElementById('carModel')?.value || '';
+            const phoneNumber = document.getElementById('phoneNumber')?.value || '';
+            
+            // Create email body
+            const body = `Dear Mr. Tonny,
+
+Please find my documents attached for the Proton car purchase application.
+
+APPLICATION DETAILS:
+- Name: ${fullName}
+- IC Number: ${icNumber}
+- Phone: ${phoneNumber}
+- Preferred Car Model: ${carModel}
+
+REQUIRED DOCUMENTS (Please attach):
+1. Identification Card (IC) copy
+2. Latest 3 months salary slips
+3. Bank statements
+4. Any other supporting documents
+
+Thank you,
+${fullName}`;
+
+            // Check if user is likely using Chrome
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            
+            if (isChrome) {
+                // For Chrome users, provide options
+                const gmailLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                
+                // Create modal with options
+                const emailModal = document.createElement('div');
+                emailModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                `;
+                
+                emailModal.innerHTML = `
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
+                        <h3 style="color: var(--secondary); margin-bottom: 20px;">
+                            <i class="fas fa-envelope"></i> Send Documents via Email
+                        </h3>
+                        
+                        <p style="margin-bottom: 20px;">
+                            Choose how you'd like to send your documents:
+                        </p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                            <button onclick="window.open('${gmailLink}', '_blank'); this.parentElement.parentElement.parentElement.remove();" 
+                                    style="background: #EA4335; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;">
+                                <i class="fab fa-google" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <strong>Open Gmail</strong><br>
+                                    <small>Best for Chrome/Gmail users</small>
+                                </div>
+                            </button>
+                            
+                            <button onclick="window.open('mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}', '_blank'); this.parentElement.parentElement.parentElement.remove();" 
+                                    style="background: var(--secondary); color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-envelope" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <strong>Use Default Email</strong><br>
+                                    <small>Outlook, Apple Mail, etc.</small>
+                                </div>
+                            </button>
+                            
+                            <button onclick="copyEmailDetails(); this.parentElement.parentElement.parentElement.remove();" 
+                                    style="background: var(--primary); color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-copy" style="font-size: 1.2rem;"></i>
+                                <div>
+                                    <strong>Copy Details</strong><br>
+                                    <small>Paste into any email client</small>
+                                </div>
+                            </button>
+                            
+                            <button onclick="this.parentElement.parentElement.parentElement.remove();" 
+                                    style="background: #6c757d; color: white; padding: 12px; border: none; border-radius: 5px; cursor: pointer;">
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(emailModal);
+                
+            } else {
+                // For non-Chrome users
+                const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                window.open(mailtoLink, '_blank');
+            }
+        }
+
+        // Function to copy email details
+        function copyEmailDetails() {
+            const email = 'tonny@fookloiproton.com';
+            const subject = 'Fook Loi Proton - Purchase Application Documents';
+            
+            const fullName = document.getElementById('fullName')?.value || '';
+            const icNumber = document.getElementById('icNumber')?.value || '';
+            const carModel = document.getElementById('carModel')?.value || '';
+            const phoneNumber = document.getElementById('phoneNumber')?.value || '';
+            
+            const emailText = `To: ${email}
+Subject: ${subject}
+
+Dear Mr. Tonny,
+
+Please find my documents attached for the Proton car purchase application.
+
+APPLICATION DETAILS:
+- Name: ${fullName}
+- IC Number: ${icNumber}
+- Phone: ${phoneNumber}
+- Preferred Car Model: ${carModel}
+
+REQUIRED DOCUMENTS (Please attach):
+1. Identification Card (IC) copy
+2. Latest 3 months salary slips
+3. Bank statements
+4. Any other supporting documents
+
+Thank you,
+${fullName}`;
+            
+            navigator.clipboard.writeText(emailText).then(() => {
+                alert('✓ Email details copied to clipboard!\n\nYou can now paste this into any email client (Gmail, Outlook, etc.)\n\nJust remember to attach your documents before sending!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = emailText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('Email details copied! Paste into your email and attach documents.');
+            });
+        }
+
+        // Make functions globally available
+        window.showGmailInstructions = showGmailInstructions;
+        window.prepareEmail = prepareEmail;
+        window.copyEmailDetails = copyEmailDetails;
+        window.submitTestDrive = submitTestDrive;
+        window.submitPurchase = submitPurchase;
+
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fook Loi Proton - Malaysia's Premium Proton Dealer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #E40521; /* Proton red */
+            --secondary: #003A70; /* Proton blue */
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        /* Logo Styles */
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-img {
+            height: 85px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .logo-text {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo-text span {
+            color: var(--secondary);
+        }
+
+        /* Header & Navigation */
+        header {
+            background-color: white;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 25px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: color 0.3s;
+            padding: 5px 0;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+        }
+
+        nav a.active {
+            color: var(--primary);
+        }
+
+        nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://i.imgur.com/fdB2eYi.png');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 100px 20px;
+            margin-bottom: 50px;
+        }
+
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary);
+            color: white;
+            padding: 12px 30px;
+            border-radius: var(--radius);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            border: 2px solid var(--primary);
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: transparent;
+            color: var(--primary);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background-color: transparent;
+            color: var(--secondary);
+        }
+
+        /* Page Sections */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--secondary);
+            font-size: 2.2rem;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background-color: var(--primary);
+            border-radius: 2px;
+        }
+
+        /* Homepage */
+        .intro {
+            background-color: white;
+            padding: 60px 20px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 50px;
+        }
+
+        .intro-content {
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .intro h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-card {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .feature-card h3 {
+            color: var(--secondary);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        /* Product Page */
+        .category-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 12px 30px;
+            background-color: white;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .category-tab.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .category-tab:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .product-category {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .product-category.active {
+            display: block;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .product-card {
+            background-color: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            height: 220px;
+            width: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            padding: 20px;
+        }
+
+        .product-category-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .premium-badge {
+            background-color: #FFD700;
+            color: #333;
+        }
+
+        .executive-badge {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .standard-badge {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .product-title {
+            font-size: 1.5rem;
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        .product-price {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+        }
+
+        .product-features {
+            list-style-type: none;
+            margin-bottom: 20px;
+        }
+
+        .product-features li {
+            padding: 5px 0;
+            border-bottom: 1px dotted var(--light-gray);
+        }
+
+        .product-features li i {
+            color: var(--primary);
+            margin-right: 10px;
+        }
+
+        .test-drive-btn {
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* About Page */
+        .about-container {
+            display: flex;
+            flex-direction: column;
+            gap: 50px;
+        }
+
+        .about-section {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: var(--shadow);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .profile-pic {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--light-gray);
+        }
+
+        .profile-info h3 {
+            color: var(--secondary);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .profile-info p {
+            color: var(--gray);
+            font-size: 1.1rem;
+        }
+
+        .success-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .success-card {
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .success-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .success-info {
+            padding: 20px;
+            background-color: white;
+        }
+
+        .success-info h4 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+        }
+
+        /* Booking Page */
+        .booking-container {
+            background-color: white;
+            border-radius: var(--radius);
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 50px;
+        }
+
+        .booking-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--light-gray);
+        }
+
+        .booking-tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            cursor: pointer;
+            position: relative;
+            color: var(--gray);
+            transition: color 0.3s;
+        }
+
+        .booking-tab.active {
+            color: var(--primary);
+        }
+
+        .booking-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary);
+        }
+
+        .booking-tab-content {
+            display: none;
+        }
+
+        .booking-tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .submit-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: var(--radius);
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: block;
+            margin: 40px auto 0;
+        }
+
+        .submit-btn:hover {
+            background-color: #c00;
+        }
+
+        /* Test Drive Booking Form */
+        .test-drive-info-box {
+            background-color: #f0f8ff;
+            border-left: 4px solid var(--secondary);
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: var(--radius);
+        }
+
+        .test-drive-info-box h4 {
+            color: var(--secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .time-slot {
+            padding: 10px;
+            background-color: white;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .time-slot:hover {
+            border-color: var(--primary);
+        }
+
+        .time-slot.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .car-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .car-option {
+            padding: 15px;
+            background-color: white;
+            border: 2px solid var(--light-gray);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .car-option:hover {
+            border-color: var(--primary);
+        }
+
+        .car-option.selected {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .car-option h5 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .car-option .category {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Email Instructions */
+        .gmail-help-btn {
+            background: transparent;
+            color: var(--secondary);
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: underline;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .gmail-help-btn:hover {
+            color: var(--primary);
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--secondary);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 50px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .footer-column h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .footer-column p, .footer-column a {
+            color: #d1d5db;
+            margin-bottom: 10px;
+            display: block;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: white;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .social-icons a {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            font-size: 1.2rem;
+            transition: background-color 0.3s;
+        }
+
+        .social-icons a:hover {
+            background-color: var(--primary);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #d1d5db;
+            font-size: 0.9rem;
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 50px;
+        }
+
+        .success-message.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .nav-menu {
+                position: fixed;
+                top: 80px;
+                left: 0;
+                width: 100%;
+                background-color: white;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px 0;
+                box-shadow: var(--shadow);
+                transform: translateY(-100%);
+                opacity: 0;
+                transition: all 0.3s;
+                z-index: 999;
+            }
+            
+            .nav-menu.active {
+                transform: translateY(0);
+                opacity: 1;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                gap: 0;
+                width: 100%;
+            }
+            
+            nav li {
+                width: 100%;
+                text-align: center;
+                border-bottom: 1px solid var(--light-gray);
+            }
+            
+            nav a {
+                display: block;
+                padding: 15px 0;
+            }
+            
+            .profile-header {
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 70px 20px;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .section-title {
+                font-size: 1.8rem;
+            }
+            
+            .booking-container, .about-section, .intro {
+                padding: 30px 20px;
+            }
+            
+            .booking-tabs {
+                flex-direction: column;
+            }
+            
+            .booking-tab {
+                text-align: center;
+                border-bottom: 1px solid var(--light-gray);
+            }
+            
+            .booking-tab.active::after {
+                display: none;
+            }
+            
+            .car-selection {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .car-selection {
+                grid-template-columns: 1fr;
+            }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header & Navigation -->
+    <header>
+        <div class="container nav-container">
+           <div class="logo">
+                <img src="https://static.wixstatic.com/media/1007ec_9f60e1a4f41b4436890362857b136d7f~mv2.png" class="logo-img">
+                <div class="logo-text">Fook Loi <span>Proton</span></div>
+            </div>
+            
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <nav>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="" class="nav-link active" data-page="home">Home</a></li>
+                    <li><a href="" class="nav-link" data-page="products">Proton Cars</a></li>
+                    <li><a href="" class="nav-link" data-page="about">About Me</a></li>
+                    <li><a href="" class="nav-link" data-page="booking">Booking</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Drive Your Dream Proton Today</h1>
+            <p>As an authorized Proton dealer with Fook Loi Company, I offer the best prices, latest models, and exceptional after-sales service. Experience the quality and innovation of Malaysian-made cars.</p>
+            <a href="" class="btn nav-link" data-page="products">View Our Cars</a>
+            <a href="" class="btn btn-secondary nav-link" data-page="booking" style="margin-left: 15px;">Book Test Drive</a>
+        </div>
+    </section>
+
+    <!-- Main Content - Pages -->
+    <main class="container">
+        <!-- Home Page -->
+        <section id="home-page" class="page active">
+            <div class="intro">
+                <div class="intro-content">
+                    <h2>Welcome to Fook Loi Proton</h2>
+                    <p>As Malaysia's premier Proton dealership, we bring you the latest models with competitive pricing and excellent customer service. With years of experience in the automotive industry, I ensure every customer drives home satisfied with their new Proton vehicle.</p>
+                    <p>Proton has been Malaysia's national car manufacturer since 1983, producing reliable, innovative, and affordable vehicles for Malaysian families and businesses.</p>
+                </div>
+            </div>
+            
+            <h2 class="section-title">Why Choose Fook Loi Proton?</h2>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-car"></i>
+                    </div>
+                    <h3>Wide Selection</h3>
+                    <p>From the compact Proton Saga to the luxurious Proton X90, we have all Proton models available for test drive and purchase.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tag"></i>
+                    </div>
+                    <h3>Best Prices</h3>
+                    <p>We offer the most competitive prices in the market with special promotions, discounts, and financing options.</p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3>Expert Support</h3>
+                    <p>With over 10 years of experience selling Proton cars, I provide personalized consultation to find your perfect vehicle.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Products Page -->
+        <section id="products-page" class="page">
+            <h2 class="section-title">Our Proton Models</h2>
+            
+            <div class="category-tabs">
+                <div class="category-tab active" data-category="premium">Premium Models</div>
+                <div class="category-tab" data-category="executive">Executive Models</div>
+                <div class="category-tab" data-category="standard">Standard Models</div>
+            </div>
+            
+            <!-- Premium Category -->
+            <div id="premium-category" class="product-category active">
+                <div class="products-grid">
+                    <!-- Proton S70 Premium -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton S70 Premium</h3>
+                            <div class="product-price">From RM 123,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Luxurious Nappa Leather</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton S70 Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton E-Mas Premium -->
+                    <div class="product-card">
+                        <img src="https://assets.autobuzz.my/wp-content/uploads/2024/12/16165907/2024-Proton-eMAS7-Launch-Malaysia-4.jpg" alt="Proton X70 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton E-Mas Premium</h3>
+                            <div class="product-price">From RM 106,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Intelligent AWD System</li>
+                                <li><i class="fas fa-check"></i> Premium Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton E-Mas Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Persona Premium -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Persona-facelift-Premium-Space-Grey-01-e1628134455824.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton Persona Premium</h3>
+                            <div class="product-price">From RM 86,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium B-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Features</li>
+                                <li><i class="fas fa-check"></i> Premium Leather Seats</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Persona Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Iriz Premium -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Iriz-Active-facelift-26-e1628131766595.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton Iriz Premium</h3>
+                            <div class="product-price">From RM 79,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium B-Segment Hatchback</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> 5-Star ASEAN NCAP Rating</li>
+                                <li><i class="fas fa-check"></i> Premium Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Iriz Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Saga Premium -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2669/proton-saga-2025-dimension-front-view-983517.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton Saga Premium</h3>
+                            <div class="product-price">From RM 49,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium A-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.3L Engine</li>
+                                <li><i class="fas fa-check"></i> 4-Speed Automatic</li>
+                                <li><i class="fas fa-check"></i> Best-Selling Malaysian Car</li>
+                                <li><i class="fas fa-check"></i> Excellent Fuel Economy</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Saga Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X90 Premium -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton X90 Premium</h3>
+                            <div class="product-price">From RM 123,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Luxurious Nappa Leather</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X90 Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X70 Premium -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2471/proton-x70-front-angle-low-view-523901.jpg" alt="Proton X90 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton X70 Premium</h3>
+                            <div class="product-price">From RM 106,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Intelligent AWD System</li>
+                                <li><i class="fas fa-check"></i> Premium Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X70 Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton X50 Premium -->
+                    <div class="product-card">
+                        <img src="https://automacha.com/wp-content/uploads/2020/09/Proton-X50-showroom-pictures__7204-1.jpg" alt="Proton S70 Premium" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge premium-badge">Premium</span>
+                            <h3 class="product-title">Proton X50 Premium</h3>
+                            <div class="product-price">From RM 94,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.5L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Features</li>
+                                <li><i class="fas fa-check"></i> Premium Interior</li>
+                                <li><i class="fas fa-check"></i> Smart Connectivity</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X50 Premium">Book Test Drive</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Executive Category -->
+            <div id="executive-category" class="product-category">
+                <div class="products-grid">
+                   <!-- Proton S70 Executive -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton S70 Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton S70 Executive</h3>
+                            <div class="product-price">From RM 105,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Luxurious Nappa Leather</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton S70 Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton E-Mas Executive -->
+                    <div class="product-card">
+                        <img src="https://assets.autobuzz.my/wp-content/uploads/2024/12/16165907/2024-Proton-eMAS7-Launch-Malaysia-4.jpg" alt="Proton E-Mas Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton E-Mas Executive</h3>
+                            <div class="product-price">From RM 92,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Premium SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Intelligent AWD System</li>
+                                <li><i class="fas fa-check"></i> Executive Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton E-Mas Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Persona Executive -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Persona-facelift-Premium-Space-Grey-01-e1628134455824.jpg" alt="Proton Persona Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton Persona Executive</h3>
+                            <div class="product-price">From RM 73,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive B-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Features</li>
+                                <li><i class="fas fa-check"></i> Executive Leather Seats</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Persona Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Iriz Executive -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Iriz-Active-facelift-26-e1628131766595.jpg" alt="Proton Iriz Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton Iriz Executive</h3>
+                            <div class="product-price">From RM 66,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive B-Segment Hatchback</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> 5-Star ASEAN NCAP Rating</li>
+                                <li><i class="fas fa-check"></i> Executive Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Iriz Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Saga Executive -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2669/proton-saga-2025-dimension-front-view-983517.jpg" alt="Proton Saga Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton Saga Executive</h3>
+                            <div class="product-price">From RM 41,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive A-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.3L Engine</li>
+                                <li><i class="fas fa-check"></i> 4-Speed Automatic</li>
+                                <li><i class="fas fa-check"></i> Best-Selling Malaysian Car</li>
+                                <li><i class="fas fa-check"></i> Excellent Fuel Economy</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Saga Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X90 Executive -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton X90 Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton X90 Executive</h3>
+                            <div class="product-price">From RM 105,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Luxurious Nappa Leather</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X90 Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X70 Executive -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2471/proton-x70-front-angle-low-view-523901.jpg" alt="Proton X70 Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton X70 Executive</h3>
+                            <div class="product-price">From RM 92,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Intelligent AWD System</li>
+                                <li><i class="fas fa-check"></i> Executive Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X70 Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton X50 Executive -->
+                    <div class="product-card">
+                        <img src="https://automacha.com/wp-content/uploads/2020/09/Proton-X50-showroom-pictures__7204-1.jpg" alt="Proton X50 Executive" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge executive-badge">Executive</span>
+                            <h3 class="product-title">Proton X50 Executive</h3>
+                            <div class="product-price">From RM 81,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Executive Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.5L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> Advanced Safety Features</li>
+                                <li><i class="fas fa-check"></i> Executive Interior</li>
+                                <li><i class="fas fa-check"></i> Smart Connectivity</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X50 Executive">Book Test Drive</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <!-- Standard Category -->
+            <div id="standard-category" class="product-category">
+                <div class="products-grid">
+                   <!-- Proton S70 Standard -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton S70 Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton S70 Standard</h3>
+                            <div class="product-price">From RM 89,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Standard Leather Seats</li>
+                                <li><i class="fas fa-check"></i> Basic Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton S70 Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton E-Mas Standard -->
+                    <div class="product-card">
+                        <img src="https://assets.autobuzz.my/wp-content/uploads/2024/12/16165907/2024-Proton-eMAS7-Launch-Malaysia-4.jpg" alt="Proton E-Mas Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton E-Mas Standard</h3>
+                            <div class="product-price">From RM 78,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Basic AWD System</li>
+                                <li><i class="fas fa-check"></i> Standard Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton E-Mas Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Persona Standard -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Persona-facelift-Premium-Space-Grey-01-e1628134455824.jpg" alt="Proton Persona Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton Persona Standard</h3>
+                            <div class="product-price">From RM 62,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard B-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> Basic Safety Features</li>
+                                <li><i class="fas fa-check"></i> Fabric Seats</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Persona Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Iriz Standard -->
+                    <div class="product-card">
+                        <img src="https://paultan.org/image/2021/08/2022-Proton-Iriz-Active-facelift-26-e1628131766595.jpg" alt="Proton Iriz Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton Iriz Standard</h3>
+                            <div class="product-price">From RM 56,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard B-Segment Hatchback</li>
+                                <li><i class="fas fa-check"></i> 1.6L VVT Engine</li>
+                                <li><i class="fas fa-check"></i> CVT Transmission</li>
+                                <li><i class="fas fa-check"></i> 5-Star ASEAN NCAP Rating</li>
+                                <li><i class="fas fa-check"></i> Basic Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Iriz Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton Saga Standard -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2669/proton-saga-2025-dimension-front-view-983517.jpg" alt="Proton Saga Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton Saga Standard</h3>
+                            <div class="product-price">From RM 34,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard A-Segment Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.3L Engine</li>
+                                <li><i class="fas fa-check"></i> 4-Speed Automatic</li>
+                                <li><i class="fas fa-check"></i> Best-Selling Malaysian Car</li>
+                                <li><i class="fas fa-check"></i> Excellent Fuel Economy</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton Saga Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X90 Standard -->
+                    <div class="product-card">
+                        <img src="https://carsofmalaysia.com/wp-content/uploads/2024/09/Proton-X90-Premium.jpg" alt="Proton X90 Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton X90 Standard</h3>
+                            <div class="product-price">From RM 89,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Flagship 7-Seater SUV</li>
+                                <li><i class="fas fa-check"></i> Mild Hybrid Technology</li>
+                                <li><i class="fas fa-check"></i> Standard Leather Seats</li>
+                                <li><i class="fas fa-check"></i> Basic Safety Suite</li>
+                                <li><i class="fas fa-check"></i> 48V Belt Starter Generator</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X90 Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+					
+					 <!-- Proton X70 Standard -->
+                    <div class="product-card">
+                        <img src="https://imgcdn.zigwheels.my/large/gallery/exterior/26/2471/proton-x70-front-angle-low-view-523901.jpg" alt="Proton X70 Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton X70 Standard</h3>
+                            <div class="product-price">From RM 78,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard SUV Category</li>
+                                <li><i class="fas fa-check"></i> 1.8L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> 7-Speed Dual Clutch</li>
+                                <li><i class="fas fa-check"></i> Basic AWD System</li>
+                                <li><i class="fas fa-check"></i> Standard Sound System</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X70 Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Proton X50 Standard -->
+                    <div class="product-card">
+                        <img src="https://automacha.com/wp-content/uploads/2020/09/Proton-X50-showroom-pictures__7204-1.jpg" alt="Proton X50 Standard" class="product-image">
+                        <div class="product-info">
+                            <span class="product-category-badge standard-badge">Standard</span>
+                            <h3 class="product-title">Proton X50 Standard</h3>
+                            <div class="product-price">From RM 69,800</div>
+                            <ul class="product-features">
+                                <li><i class="fas fa-check"></i> Standard Sedan</li>
+                                <li><i class="fas fa-check"></i> 1.5L Turbo Engine</li>
+                                <li><i class="fas fa-check"></i> Basic Safety Features</li>
+                                <li><i class="fas fa-check"></i> Standard Interior</li>
+                                <li><i class="fas fa-check"></i> Basic Connectivity</li>
+                            </ul>
+                            <button class="btn test-drive-btn" data-car="Proton X50 Standard">Book Test Drive</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </section>
+
+        <!-- About Page -->
+        <section id="about-page" class="page">
+            <h2 class="section-title">About Your Proton Consultant</h2>
+            
+            <div class="about-container">
+                <div class="about-section">
+                    <div class="profile-header">
+                        <img src="https://i.imgur.com/27yuGXf.png" alt="Sales Consultant" class="profile-pic">
+                        <div class="profile-info">
+                            <h3>Mr. TONNY CHIE YAT MING</h3>
+                            <p><i class="fas fa-briefcase"></i> Senior Sales Consultant, Fook Loi Proton</p>
+                            <p><i class="fas fa-map-marker-alt"></i> Sandakan, Sabah, Malaysia</p>
+                            <p><i class="fas fa-phone"></i> +6016-831-0418</p>
+                            <p><i class="fas fa-envelope"></i> tonny@fookloiproton.com</p>
+                            <p>With over 10 years of experience in automotive sales, I specialize in helping customers find their perfect Proton vehicle. My goal is to ensure every client drives home satisfied with their purchase and receives exceptional after-sales support.</p>
+                        </div>
+                    </div>
+                    
+                    <h3 style="color: var(--secondary); margin-top: 30px;">My Sales Achievements</h3>
+					<img src="https://i.imgur.com/3ncqOwG.jpeg" width="300" height="300">
+                    <p>Had experience for about 20 years in selling both new and used cars.</p>
+                </div>
+                
+                <div class="about-section">
+                    <h3 style="color: var(--secondary); margin-bottom: 20px;">Successful Customer Deliveries</h3>
+                    
+                    <div class="success-grid">
+                        <div class="success-card">
+                            <img src="https://paultan.org/image/2025/11/2026-Proton-Saga-1.5-Premium-MC3-Marine-Blue-official-photo-8-e1763005358811-630x331.jpg" alt="Happy Customer" class="success-img">
+                            <div class="success-info">
+                              <h4>Mrs Angel Leong</h4>
+                              <p>Purchased Proton X70 in January 2023. "Mr. Tonny provided excellent service and helped us get the best financing deal for our new family car."</p>
+                            </div>
+                        </div>
+                        
+                        <div class="success-card">
+                            <img src="https://images.unsplash.com/photo-1549399542-7e3f8b79c341?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80" alt="Car Delivery" class="success-img">
+                            <div class="success-info">
+                                <h4>Ms. Aisha</h4>
+                                <p>Purchased Proton X50 in March 2023. "As a first-time car buyer, Mr. Tonny guided me through the entire process and made it stress-free."</p>
+                            </div>
+                        </div>
+                        
+                        <div class="success-card">
+                            <img src="https://images.unsplash.com/photo-1553440569-bcc63803a83d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1111&q=80" alt="Business Customer" class="success-img">
+                            <div class="success-info">
+                                <h4>Enterprise Solutions Sdn Bhd</h4>
+                                <p>Fleet of 5 Proton Saga for company use in June 2023. "Mr. Tonny provided excellent corporate rates and efficient delivery for our fleet needs."</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Booking Page -->
+        <section id="booking-page" class="page">
+            <h2 class="section-title">Booking & Test Drive</h2>
+            
+            <!-- Success Message (Hidden by default) -->
+            <div id="success-message" class="success-message">
+                <div class="success-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3>Booking Submitted Successfully!</h3>
+                <p>Thank you for your booking request. I will contact you within 24 hours to confirm your appointment.</p>
+                <p>A confirmation email has been sent to your email address.</p>
+                <button class="btn" id="new-booking-btn">Make Another Booking</button>
+            </div>
+            
+            <!-- Booking Form (Visible by default) -->
+            <div id="booking-form-container">
+                <div class="booking-container">
+                    <div class="booking-tabs">
+                        <button class="booking-tab active" data-tab="test-drive">Book Test Drive</button>
+                        <button class="booking-tab" data-tab="car-purchase">Car Purchase Application</button>
+                    </div>
+                    
+                    <!-- Test Drive Booking Form -->
+                    <div id="test-drive-tab" class="booking-tab-content active">
+                        <form id="test-drive-form">
+                            <div class="test-drive-info-box">
+                                <h4><i class="fas fa-info-circle"></i> Test Drive Information</h4>
+                                <p>Test drives are available from Monday to Saturday, 9:00 AM to 6:00 PM. Each test drive session lasts approximately 30 minutes. Please bring your valid driver's license.</p>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="test-drive-name">Full Name *</label>
+                                    <input type="text" id="test-drive-name" class="form-control" required placeholder="Enter your full name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="test-drive-phone">Phone Number *</label>
+                                    <input type="tel" id="test-drive-phone" class="form-control" required placeholder="e.g. 012-345 6789">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="test-drive-email">Email Address *</label>
+                                    <input type="email" id="test-drive-email" class="form-control" required placeholder="your.email@example.com">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="test-drive-date">Preferred Date *</label>
+                                    <input type="date" id="test-drive-date" class="form-control" required min="">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Preferred Time Slot *</label>
+                                <div class="time-slots">
+                                    <div class="time-slot" data-time="09:00">9:00 AM</div>
+                                    <div class="time-slot" data-time="10:00">10:00 AM</div>
+                                    <div class="time-slot" data-time="11:00">11:00 AM</div>
+                                    <div class="time-slot" data-time="12:00">12:00 PM</div>
+                                    <div class="time-slot" data-time="14:00">2:00 PM</div>
+                                    <div class="time-slot" data-time="15:00">3:00 PM</div>
+                                    <div class="time-slot" data-time="16:00">4:00 PM</div>
+                                    <div class="time-slot" data-time="17:00">5:00 PM</div>
+                                </div>
+                                <input type="hidden" id="selected-time">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Car Model to Test Drive *</label>
+                                <div class="car-selection">
+                                    <div class="car-option" data-car="Proton X90 Premium">
+                                        <h5>Proton X90</h5>
+                                        <div class="category">Premium</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton X70 Premium">
+                                        <h5>Proton X70</h5>
+                                        <div class="category">Premium</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton S70 Premium">
+                                        <h5>Proton S70</h5>
+                                        <div class="category">Premium</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton X50 Executive">
+                                        <h5>Proton X50</h5>
+                                        <div class="category">Executive</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton Persona Executive">
+                                        <h5>Proton Persona</h5>
+                                        <div class="category">Executive</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton Iriz Executive">
+                                        <h5>Proton Iriz</h5>
+                                        <div class="category">Executive</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton Saga Standard">
+                                        <h5>Proton Saga</h5>
+                                        <div class="category">Standard</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton Iriz Standard">
+                                        <h5>Proton Iriz</h5>
+                                        <div class="category">Standard</div>
+                                    </div>
+                                    <div class="car-option" data-car="Proton Persona Standard">
+                                        <h5>Proton Persona</h5>
+                                        <div class="category">Standard</div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selected-car">
+                            </div>
+
+                            
+                            <div class="form-group">
+                                <label for="test-drive-notes">Additional Notes or Special Requests</label>
+                                <textarea id="test-drive-notes" class="form-control" rows="3" placeholder="Any specific features you'd like to test or special requirements..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-calendar-check"></i> Confirm Test Drive Booking
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <!-- Car Purchase Application Form -->
+                    <div id="car-purchase-tab" class="booking-tab-content">
+                        <form id="purchase-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fullName">Full Name *</label>
+                                    <input type="text" id="fullName" class="form-control" required placeholder="Enter your full name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="icNumber">Identification Card Number *</label>
+                                    <input type="text" id="icNumber" class="form-control" required placeholder="e.g. 901231-01-1234">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="dateOfBirth">Date of Birth *</label>
+                                    <input type="date" id="dateOfBirth" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="phoneNumber">Phone Number *</label>
+                                    <input type="tel" id="phoneNumber" class="form-control" required placeholder="e.g. 012-345 6789">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="email">Email Address *</label>
+                                    <input type="email" id="email" class="form-control" required placeholder="your.email@example.com">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="salary">Monthly Salary (RM) *</label>
+                                    <input type="number" id="salary" class="form-control" required placeholder="e.g. 5000">
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="carModel">Preferred Proton Model *</label>
+                                    <select id="carModel" class="form-control" required>
+                                        <option value="">Select a model</option>
+                                        <option value="Proton X90 Premium">Proton X90 Premium</option>
+                                        <option value="Proton X70 Premium">Proton X70 Premium</option>
+                                        <option value="Proton S70 Premium">Proton S70 Premium</option>
+                                        <option value="Proton X50 Executive">Proton X50 Executive</option>
+                                        <option value="Proton Persona Executive">Proton Persona Executive</option>
+                                        <option value="Proton Iriz Executive">Proton Iriz Executive</option>
+                                        <option value="Proton Saga Standard">Proton Saga Standard</option>
+                                        <option value="Proton Persona Standard">Proton Persona Standard</option>
+                                        <option value="Proton Iriz Standard">Proton Iriz Standard</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="purpose">Purchase Purpose *</label>
+                                    <select id="purpose" class="form-control" required>
+                                        <option value="">Select purpose</option>
+                                        <option value="personal">Personal Use</option>
+                                        <option value="family">Family Vehicle</option>
+                                        <option value="business">Business Use</option>
+                                        <option value="firstcar">First Car</option>
+                                        <option value="upgrade">Upgrade from Older Car</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Document Submission</label>
+                                <div style="background-color: #f0f8ff; border-left: 4px solid var(--secondary); padding: 20px; border-radius: 8px; margin-top: 10px;">
+                                    <h4 style="color: var(--secondary); margin-bottom: 15px;">
+                                        <i class="fas fa-envelope"></i> How to Submit Documents
+                                    </h4>
+                                    
+                                    <p style="margin-bottom: 15px;">
+                                        Please email your documents directly to us. The button below will help you prepare the email.
+                                    </p>
+                                    
+                                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                                        <h5 style="color: #856404; margin-bottom: 10px;">
+                                            <i class="fab fa-google"></i> For Gmail Users:
+                                        </h5>
+                                        <ol style="margin-left: 20px; color: #856404; font-size: 0.9rem;">
+                                            <li>Click the button below</li>
+                                            <li>Choose "Open Gmail" option</li>
+                                            <li>Attach your documents in Gmail</li>
+                                            <li>Review and send the email</li>
+                                        </ol>
+                                    </div>
+                                    
+                                    <p style="margin-bottom: 20px; font-size: 0.9rem; color: var(--gray);">
+                                        <i class="fas fa-info-circle"></i> Required documents:
+                                        <br>• Identification Card (IC) copy
+                                        <br>• Latest 3 months salary slips
+                                        <br>• Bank statements
+                                        <br>• Any other supporting documents
+                                    </p>
+                                    
+                                    <button type="button" id="emailDocumentsBtn" class="btn" style="background-color: var(--secondary);">
+                                        <i class="fas fa-paper-plane"></i> Prepare Email with Documents
+                                    </button>
+                                    <button type="button" class="gmail-help-btn" onclick="showGmailInstructions()">
+                                        <i class="fas fa-question-circle"></i> Need help with Gmail?
+                                    </button>
+                                    
+                                    <div style="margin-top: 15px; font-size: 0.9rem; color: var(--gray);">
+                                        <p><strong>Email to send documents:</strong></p>
+                                        <p style="font-size: 1.1rem; color: var(--primary); font-weight: bold; background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                                            tonny@fookloiproton.com
+                                        </p>
+                                        <p style="margin-top: 10px;">
+                                            <i class="fas fa-lightbulb"></i> Tip: You can also open Gmail separately and send to this address.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notes">Additional Notes or Questions</label>
+                                <textarea id="notes" class="form-control" rows="4" placeholder="Any specific requirements, preferred color, or questions about financing..."></textarea>
+                            </div>
+                            
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-paper-plane"></i> Submit Purchase Application
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>Fook Loi Proton</h3>
+                    <p>Your trusted Proton dealer in Malaysia. We provide the best prices, latest models, and exceptional customer service for all your automotive needs.</p>
+                    <div class="social-icons">
+                        <a href="https://www.facebook.com/tony.c.ming"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://tonnychieproton.wasap.my/"><i class="fab fa-whatsapp"></i></a>
+                        <a href="https://www.instagram.com/tonnychie?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Contact Info</h3>
+                    <p><i class="fas fa-map-marker-alt"></i> Jalan Utara, 90000 Sandakan, Sabah</p>
+                    <p><i class="fas fa-phone"></i> +6089-232 111</p>
+                    <p><i class="fas fa-mobile-alt"></i> +6016-831-0418 (Mr. Tonny)</p>
+                    <p><i class="fas fa-envelope"></i> tonny@fookloiproton.com</p>
+                </div>
+                
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <a href="" class="nav-link" data-page="home">Home</a>
+                    <a href="" class="nav-link" data-page="products">Proton Models</a>
+                    <a href="" class="nav-link" data-page="about">About Consultant</a>
+                    <a href="" class="nav-link" data-page="booking">Booking</a>
+                </div>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2025 Fook Loi Proton. All rights reserved. | Official Proton Dealer Tonny</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Navigation between pages
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pages = document.querySelectorAll('.page');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navMenu = document.getElementById('navMenu');
+            
+            // Product category tabs
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            const productCategories = document.querySelectorAll('.product-category');
+            
+            // Booking page tabs
+            const bookingTabs = document.querySelectorAll('.booking-tab');
+            const bookingTabContents = document.querySelectorAll('.booking-tab-content');
+            
+            // Test drive elements
+            const testDriveBtns = document.querySelectorAll('.test-drive-btn');
+            const timeSlots = document.querySelectorAll('.time-slot');
+            const carOptions = document.querySelectorAll('.car-option');
+            const testDriveForm = document.getElementById('test-drive-form');
+            const purchaseForm = document.getElementById('purchase-form');
+            
+            // Email document button
+            const emailDocumentsBtn = document.getElementById('emailDocumentsBtn');
+            
+            // Success message elements
+            const successMessage = document.getElementById('success-message');
+            const bookingFormContainer = document.getElementById('booking-form-container');
+            const newBookingBtn = document.getElementById('new-booking-btn');
+            
+            // Set minimum date for test drive to tomorrow
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const minDate = tomorrow.toISOString().split('T')[0];
+            document.getElementById('test-drive-date').min = minDate;
+            
+            // Set default date for date of birth (18 years ago)
+            const dateOfBirthInput = document.getElementById('dateOfBirth');
+            if (dateOfBirthInput) {
+                const defaultDate = new Date();
+                defaultDate.setFullYear(defaultDate.getFullYear() - 18);
+                dateOfBirthInput.value = defaultDate.toISOString().split('T')[0];
+            }
+            
+            // Page navigation
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Get target page
+                    const targetPage = this.getAttribute('data-page');
+                    
+                    // Update active nav link
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show target page
+                    pages.forEach(page => {
+                        page.classList.remove('active');
+                        if (page.id === `${targetPage}-page`) {
+                            page.classList.add('active');
+                        }
+                    });
+                    
+                    // Close mobile menu if open
+                    if (navMenu.classList.contains('active')) {
+                        navMenu.classList.remove('active');
+                    }
+                    
+                    // Scroll to top of page
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                });
+            });
+            
+            // Mobile menu toggle
+            mobileMenuBtn.addEventListener('click', function() {
+                navMenu.classList.toggle('active');
+            });
+            
+            // Product category tabs
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const category = this.getAttribute('data-category');
+                    
+                    // Update active tab
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show selected category
+                    productCategories.forEach(cat => {
+                        cat.classList.remove('active');
+                        if (cat.id === `${category}-category`) {
+                            cat.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Booking page tabs
+            bookingTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    bookingTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show selected tab content
+                    bookingTabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === `${tabId}-tab`) {
+                            content.classList.add('active');
+                        }
+                    });
+                });
+            });
+            
+            // Test Drive button click from product page
+            testDriveBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const selectedCar = this.getAttribute('data-car');
+                    
+                    // Navigate to booking page
+                    navLinks.forEach(navLink => navLink.classList.remove('active'));
+                    document.querySelector('.nav-link[data-page="booking"]').classList.add('active');
+                    
+                    pages.forEach(page => {
+                        page.classList.remove('active');
+                        if (page.id === 'booking-page') {
+                            page.classList.add('active');
+                        }
+                    });
+                    
+                    // Set the car selection in test drive form
+                    document.getElementById('selected-car').value = selectedCar;
+                    
+                    // Select the corresponding car option
+                    carOptions.forEach(option => {
+                        option.classList.remove('selected');
+                        if (option.getAttribute('data-car') === selectedCar) {
+                            option.classList.add('selected');
+                        }
+                    });
+                    
+                    // Switch to test drive tab
+                    bookingTabs.forEach(t => t.classList.remove('active'));
+                    document.querySelector('.booking-tab[data-tab="test-drive"]').classList.add('active');
+                    
+                    bookingTabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === 'test-drive-tab') {
+                            content.classList.add('active');
+                        }
+                    });
+                    
+                    // Scroll to booking form
+                    window.scrollTo({top: 0, behavior: 'smooth'});
+                });
+            });
+            
+            // Time slot selection
+            timeSlots.forEach(slot => {
+                slot.addEventListener('click', function() {
+                    // Update selection
+                    timeSlots.forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('selected-time').value = this.getAttribute('data-time');
+                });
+            });
+            
+            // Car option selection
+            carOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    // Update selection
+                    carOptions.forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('selected-car').value = this.getAttribute('data-car');
+                });
+            });
+            
+            // Email document button functionality
+            if (emailDocumentsBtn) {
+                emailDocumentsBtn.addEventListener('click', function() {
+                    prepareEmail();
+                });
+            }
+            
+            // Test Drive form submission
+            testDriveForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Check if time slot is selected
+                const timeSelected = document.querySelector('.time-slot.selected');
+                const carSelected = document.querySelector('.car-option.selected');
+                
+                if (!timeSelected) {
+                    alert('Please select a time slot.');
+                    return;
+                }
+                
+                if (!carSelected) {
+                    alert('Please select a car model.');
+                    return;
+                }
+                
+                // Get form data
+                const formData = {
+                    name: document.getElementById('test-drive-name').value,
+                    phone: document.getElementById('test-drive-phone').value,
+                    email: document.getElementById('test-drive-email').value,
+                    date: document.getElementById('test-drive-date').value,
+                    time: document.getElementById('selected-time').value,
+                    car: document.getElementById('selected-car').value,
+                    notes: document.getElementById('test-drive-notes').value
+                };
+                
+                // Show loading state
+                const submitBtn = this.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                submitBtn.disabled = true;
+                
+                // Submit to Supabase
+                try {
+                    const result = await submitTestDrive(formData);
+                    
+                    if (result.success) {
+                        // Show success message
+                        bookingFormContainer.style.display = 'none';
+                        successMessage.classList.add('active');
+                        
+                        console.log('Test Drive Booking Submitted:', formData);
+                    } else {
+                        // Show error
+                        alert('Error submitting booking: ' + (result.error?.message || 'Unknown error'));
+                        
+                        // Reset button
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    alert('Submission error: ' + error.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+            
+            // Purchase form submission
+            purchaseForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Get form data
+                const formData = {
+                    fullName: document.getElementById('fullName').value,
+                    icNumber: document.getElementById('icNumber').value,
+                    dateOfBirth: document.getElementById('dateOfBirth').value,
+                    phoneNumber: document.getElementById('phoneNumber').value,
+                    email: document.getElementById('email').value,
+                    salary: document.getElementById('salary').value,
+                    carModel: document.getElementById('carModel').value,
+                    purpose: document.getElementById('purpose').value,
+                    notes: document.getElementById('notes').value
+                };
+                
+                // Show loading state
+                const submitBtn = this.querySelector('.submit-btn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                submitBtn.disabled = true;
+                
+                // Submit to Supabase
+                try {
+                    const result = await submitPurchase(formData);
+                    
+                    if (result.success) {
+                        // Show success message with email reminder
+                        successMessage.innerHTML = `
+                            <div class="success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h3>Application Submitted Successfully!</h3>
+                            <p>Thank you for your purchase application. I will contact you within 24 hours.</p>
+                            
+                            <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                                <h4><i class="fab fa-google"></i> Next Step: Send Your Documents</h4>
+                                <p>Please email your documents to complete your application:</p>
+                                
+                                <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                                    <p style="margin: 0; font-weight: bold;">Email Address:</p>
+                                    <p style="font-size: 1.3rem; color: var(--primary); font-weight: bold; margin: 10px 0;">
+                                        tonny@fookloiproton.com
+                                    </p>
+                                    
+                                    <p style="margin: 10px 0 0 0; font-size: 0.9rem; color: var(--gray);">
+                                        Subject: <code>Fook Loi Proton - Purchase Application Documents</code>
+                                    </p>
+                                </div>
+                                
+                                <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                                    <button onclick="window.open('https://mail.google.com/mail/?view=cm&fs=1&to=tonny@fookloiproton.com&su=Fook Loi Proton - Purchase Application Documents', '_blank')" 
+                                            class="btn" style="background: #EA4335;">
+                                        <i class="fab fa-google"></i> Open Gmail
+                                    </button>
+                                    <button onclick="window.open('mailto:tonny@fookloiproton.com?subject=Fook Loi Proton - Purchase Application Documents', '_blank')" 
+                                            class="btn" style="background: var(--secondary);">
+                                        <i class="fas fa-envelope"></i> Use Other Email
+                                    </button>
+                                    <button onclick="showGmailInstructions()" class="btn" style="background: var(--primary);">
+                                        <i class="fas fa-question-circle"></i> Need Help?
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <button class="btn" id="new-booking-btn" style="margin-top: 20px;">
+                                <i class="fas fa-plus"></i> Make Another Application
+                            </button>
+                        `;
+                        
+                        // Update new booking button event listener
+                        const newBtn = document.getElementById('new-booking-btn');
+                        if (newBtn) {
+                            newBtn.addEventListener('click', function() {
+                                successMessage.classList.remove('active');
+                                bookingFormContainer.style.display = 'block';
+                                testDriveForm.reset();
+                                purchaseForm.reset();
+                                timeSlots.forEach(slot => slot.classList.remove('selected'));
+                                carOptions.forEach(option => option.classList.remove('selected'));
+                                document.getElementById('selected-time').value = '';
+                                document.getElementById('selected-car').value = '';
+                                
+                                // Switch to test drive tab
+                                bookingTabs.forEach(t => t.classList.remove('active'));
+                                document.querySelector('.booking-tab[data-tab="test-drive"]').classList.add('active');
+                                bookingTabContents.forEach(content => {
+                                    content.classList.remove('active');
+                                    if (content.id === 'test-drive-tab') {
+                                        content.classList.add('active');
+                                    }
+                                });
+                            });
+                        }
+                        
+                        bookingFormContainer.style.display = 'none';
+                        successMessage.classList.add('active');
+                        
+                        console.log('Purchase Application Submitted:', formData);
+                    } else {
+                        // Show error
+                        alert('Error submitting application: ' + (result.error?.message || 'Unknown error'));
+                        
+                        // Reset button
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                } catch (error) {
+                    alert('Submission error: ' + error.message);
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            });
+            
+            // New booking button
+            newBookingBtn.addEventListener('click', function() {
+                successMessage.classList.remove('active');
+                bookingFormContainer.style.display = 'block';
+                
+                // Reset forms
+                testDriveForm.reset();
+                purchaseForm.reset();
+                
+                // Reset selections
+                timeSlots.forEach(slot => slot.classList.remove('selected'));
+                carOptions.forEach(option => option.classList.remove('selected'));
+                document.getElementById('selected-time').value = '';
+                document.getElementById('selected-car').value = '';
+                
+                // Switch to test drive tab
+                bookingTabs.forEach(t => t.classList.remove('active'));
+                document.querySelector('.booking-tab[data-tab="test-drive"]').classList.add('active');
+                
+                bookingTabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === 'test-drive-tab') {
+                        content.classList.add('active');
+                    }
+                });
+            });
+            
+            // Phone number formatting
+            const phoneInputs = document.querySelectorAll('input[type="tel"]');
+            phoneInputs.forEach(input => {
+                input.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/\D/g, '');
+                    if (value.length > 3 && value.length <= 6) {
+                        value = value.replace(/(\d{3})(\d+)/, '$1-$2');
+                    } else if (value.length > 6) {
+                        value = value.replace(/(\d{3})(\d{3})(\d+)/, '$1-$2 $3');
+                    }
+                    e.target.value = value;
+                });
+            });
+            
+            // Highlight current page on load
+            const currentPage = window.location.hash.substring(1) || 'home';
+            const currentNavLink = document.querySelector(`.nav-link[data-page="${currentPage}"]`);
+            const currentPageElement = document.getElementById(`${currentPage}-page`);
+            
+            if (currentNavLink && currentPageElement) {
+                navLinks.forEach(link => link.classList.remove('active'));
+                pages.forEach(page => page.classList.remove('active'));
+                
+                currentNavLink.classList.add('active');
+                currentPageElement.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>
